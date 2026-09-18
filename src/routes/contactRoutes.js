@@ -17,6 +17,13 @@ const contactValidation = [
     .isLength({ min: 2, max: 100 })
     .withMessage("Name must be between 2 and 100 characters"),
 
+  body("mobile")
+    .trim()
+    .notEmpty()
+    .withMessage("Mobile number is required")
+    .matches(/^[6-9]\d{9}$/)
+    .withMessage("Please enter a valid 10-digit Indian mobile number"),
+
   body("email")
     .trim()
     .notEmpty()
@@ -36,7 +43,9 @@ const contactValidation = [
     .notEmpty()
     .withMessage("Message is required")
     .isLength({ min: 10, max: 3000 })
-    .withMessage("Message must be between 10 and 3000 characters"),
+    .withMessage(
+      "Message must be between 10 and 3000 characters"
+    ),
 ];
 
 router.post("/", contactValidation, validate, createContact);

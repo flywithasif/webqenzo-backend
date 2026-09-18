@@ -10,18 +10,18 @@ const contactSchema = new mongoose.Schema(
       maxlength: 100,
     },
 
+    mobile: {
+      type: String,
+      required: true,
+      trim: true,
+      match: /^[6-9]\d{9}$/,
+    },
+
     email: {
       type: String,
       required: true,
       trim: true,
       lowercase: true,
-    },
-
-    mobile: { 
-      type: String, 
-      required: true, 
-      trim: true, 
-      match: /^[6-9]\d{9}$/, 
     },
 
     subject: {
