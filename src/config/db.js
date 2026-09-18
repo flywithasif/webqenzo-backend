@@ -1,74 +1,54 @@
 const mongoose = require("mongoose");
 
-const globalForMongo = globalThis;
+let cached = global.mongoose;
 
-if (!globalForMongo.mongoCache) {
-  globalForMongo.mongoCache = {
+if (!cached) {
+  cached = global.mongoose = {
     conn: null,
     promise: null,
   };
 }
 
-const cache = globalForMongo.mongoCache;
-
 const connectDB = async () => {
   // Already connected
-  if (cache.conn && mongoose.connection.readyState === 1) {
-    return cache.conn;
+  if (cached.conn && mongoose.connection.readyState === 1) {
+    return cached.conn;
   }
 
-  // Connection is not healthy anymore
-  if (mongoose.connection.readyState !== 1) {
-    cache.conn = null;
-  }
-
-  // Create only one connection attempt
-  if (!cache.promise) {
+  // Create connection promise only once
+  if (!cached.promise) {
     if (!process.env.MONGO_URI) {
       throw new Error("MONGO_URI is missing");
     }
 
-    cache.promise = mongoose
+    cached.promise = mongoose
       .connect(process.env.MONGO_URI, {
-        serverSelectionTimeoutMS: 8000,
-        connectTimeoutMS: 8000,
         maxPoolSize: 10,
-        minPoolSize: 0,
+        serverSelectionTimeoutMS: 10000,
       })
-      .then((mongooseInstance) => {
-        console.log("MongoDB connected successfully");
+      .then((mongoose) => {
+        console.log("MongoDB CONNECTED");
+        console.log(
+          "MongoDB readyState:",
+          mongoose.connection.readyState
+        );
 
-        cache.conn = mongooseInstance.connection;
-
-        return cache.conn;
+        return mongoose;
       })
       .catch((error) => {
+        cached.promise = null;
         console.error(
           "MongoDB connection failed:",
           error.message
         );
 
-        // Important: allow the next request to retry
-        cache.promise = null;
-        cache.conn = null;
-
         throw error;
       });
   }
 
-  const connection = await cache.promise;
+  cached.conn = await cached.promise;
 
-  // Final safety check
-  if (mongoose.connection.readyState !== 1) {
-    cache.promise = null;
-    cache.conn = null;
-
-    throw new Error(
-      `MongoDB connection is not ready. ReadyState: ${mongoose.connection.readyState}`
-    );
-  }
-
-  return connection;
+  return cached.conn;
 };
 
 module.exports = connectDB;

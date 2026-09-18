@@ -16,14 +16,13 @@ const handler = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Database connection failed",
+      error: error.message,
     });
   }
 };
 
-// Vercel serverless function
 module.exports = handler;
 
-// Local development
 if (require.main === module) {
   connectDB()
     .then(() => {
