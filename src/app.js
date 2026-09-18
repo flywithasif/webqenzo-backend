@@ -3,6 +3,7 @@ const cors = require("cors");
 
 const quoteRoutes = require("./routes/quoteRoutes");
 const contactRoutes = require("./routes/contactRoutes");
+const adminRoutes = require("./routes/adminRoutes");
 
 const errorMiddleware = require("./middleware/errorMiddleware");
 
@@ -39,6 +40,7 @@ app.get("/", (req, res) => {
 
 app.use("/api/quotes", quoteRoutes);
 app.use("/api/contact", contactRoutes);
+app.use("/api/admin", adminRoutes);
 
 // ================================
 // 404 Handler
