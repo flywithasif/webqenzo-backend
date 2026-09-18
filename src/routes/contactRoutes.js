@@ -6,6 +6,7 @@ const {
 } = require("../controllers/contactController");
 
 const validate = require("../middleware/validate");
+const connectDB = require("../config/db");
 
 const router = express.Router();
 
@@ -22,7 +23,9 @@ const contactValidation = [
     .notEmpty()
     .withMessage("Mobile number is required")
     .matches(/^[6-9]\d{9}$/)
-    .withMessage("Please enter a valid 10-digit Indian mobile number"),
+    .withMessage(
+      "Please enter a valid 10-digit Indian mobile number"
+    ),
 
   body("email")
     .trim()
@@ -36,7 +39,9 @@ const contactValidation = [
     .notEmpty()
     .withMessage("Subject is required")
     .isLength({ min: 3, max: 200 })
-    .withMessage("Subject must be between 3 and 200 characters"),
+    .withMessage(
+      "Subject must be between 3 and 200 characters"
+    ),
 
   body("message")
     .trim()
@@ -48,6 +53,31 @@ const contactValidation = [
     ),
 ];
 
-router.post("/", contactValidation, validate, createContact);
+// MongoDB connection middleware
+const ensureDatabaseConnection = async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (error) {
+    console.error(
+      "CONTACT DATABASE CONNECTION ERROR:",
+      error.message
+    );
+
+    return res.status(500).json({
+      success: false,
+      message: "Database connection failed",
+      error: error.message,
+    });
+  }
+};
+
+router.post(
+  "/",
+  ensureDatabaseConnection,
+  contactValidation,
+  validate,
+  createContact
+);
 
 module.exports = router;
