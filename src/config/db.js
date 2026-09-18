@@ -1,54 +1,39 @@
 const mongoose = require("mongoose");
 
-let cached = global.mongoose;
-
-if (!cached) {
-  cached = global.mongoose = {
-    conn: null,
-    promise: null,
-  };
-}
+let isConnected = false;
 
 const connectDB = async () => {
-  // Already connected
-  if (cached.conn && mongoose.connection.readyState === 1) {
-    return cached.conn;
+  if (isConnected && mongoose.connection.readyState === 1) {
+    return;
   }
 
-  // Create connection promise only once
-  if (!cached.promise) {
-    if (!process.env.MONGO_URI) {
-      throw new Error("MONGO_URI is missing");
-    }
-
-    cached.promise = mongoose
-      .connect(process.env.MONGO_URI, {
-        maxPoolSize: 10,
-        serverSelectionTimeoutMS: 10000,
-      })
-      .then((mongoose) => {
-        console.log("MongoDB CONNECTED");
-        console.log(
-          "MongoDB readyState:",
-          mongoose.connection.readyState
-        );
-
-        return mongoose;
-      })
-      .catch((error) => {
-        cached.promise = null;
-        console.error(
-          "MongoDB connection failed:",
-          error.message
-        );
-
-        throw error;
-      });
+  if (!process.env.MONGO_URI) {
+    throw new Error("MONGO_URI is not defined");
   }
 
-  cached.conn = await cached.promise;
+  try {
+    const connection = await mongoose.connect(process.env.MONGO_URI, {
+      serverSelectionTimeoutMS: 10000,
+      socketTimeoutMS: 45000,
+      maxPoolSize: 10,
+      minPoolSize: 1,
+    });
 
-  return cached.conn;
+    isConnected = connection.connection.readyState === 1;
+
+    console.log(
+      `MongoDB Connected: ${connection.connection.host}`
+    );
+  } catch (error) {
+    isConnected = false;
+
+    console.error(
+      "MongoDB Connection Error:",
+      error.message
+    );
+
+    throw error;
+  }
 };
 
 module.exports = connectDB;
