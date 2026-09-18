@@ -6,8 +6,31 @@ const connectDB = async () => {
     return mongoose.connection;
   }
 
-  // Connection is currently being established
+  // If another connection attempt is already running,
+  // wait for it instead of returning an unready connection.
   if (mongoose.connection.readyState === 2) {
+    await new Promise((resolve, reject) => {
+      const onConnected = () => {
+        cleanup();
+        resolve();
+      };
+
+      const onError = (error) => {
+        cleanup();
+        reject(error);
+      };
+
+      const cleanup = () => {
+        mongoose.connection.off("connected", onConnected);
+        mongoose.connection.off("error", onError);
+        mongoose.connection.off("disconnected", onError);
+      };
+
+      mongoose.connection.once("connected", onConnected);
+      mongoose.connection.once("error", onError);
+      mongoose.connection.once("disconnected", onError);
+    });
+
     return mongoose.connection;
   }
 
@@ -15,6 +38,8 @@ const connectDB = async () => {
     const connection = await mongoose.connect(process.env.MONGO_URI, {
       serverSelectionTimeoutMS: 10000,
       connectTimeoutMS: 10000,
+      maxPoolSize: 10,
+      minPoolSize: 0,
     });
 
     console.log(

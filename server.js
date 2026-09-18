@@ -5,20 +5,20 @@ const connectDB = require("./src/config/db");
 
 const PORT = process.env.PORT || 5000;
 
-// Cache MongoDB connection across warm Vercel invocations
-global.mongoConnectionPromise =
-  global.mongoConnectionPromise || null;
+// Cache the MongoDB connection promise across
+// warm Vercel serverless invocations.
+const globalForDB = globalThis;
 
 const startDatabase = async () => {
-  if (!global.mongoConnectionPromise) {
-    global.mongoConnectionPromise = connectDB().catch((error) => {
-      // Clear failed promise so the next request can retry
-      global.mongoConnectionPromise = null;
+  if (!globalForDB.mongoConnectionPromise) {
+    globalForDB.mongoConnectionPromise = connectDB().catch((error) => {
+      // Allow the next request to retry after a failed connection.
+      globalForDB.mongoConnectionPromise = null;
       throw error;
     });
   }
 
-  return global.mongoConnectionPromise;
+  return globalForDB.mongoConnectionPromise;
 };
 
 // Vercel / Production
