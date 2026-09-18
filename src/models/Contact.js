@@ -17,6 +17,13 @@ const contactSchema = new mongoose.Schema(
       lowercase: true,
     },
 
+    mobile: { 
+      type: String, 
+      required: true, 
+      trim: true, 
+      match: /^[6-9]\d{9}$/, 
+    },
+
     subject: {
       type: String,
       required: true,
